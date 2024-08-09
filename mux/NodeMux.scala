@@ -10,14 +10,14 @@ class NodeMux(muxType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: I
 
   in.ready := true.B
   out.valid := true.B
-  out.bits := Cat(in.bits >> inCtrl >> (in.bits(inCtrl,0)), in.bits(outCtrl,0))
+  out.bits := Cat(in.bits >> inCtrl >> (in.bits(inCtrl-1,0)), in.bits(outCtrl-1,0))
 
   if (muxType == 1 && (inWidth-inCtrl)/(outWidth-outCtrl) > 0) {
     for (i <- 0 until (inWidth-inCtrl)/(outWidth-outCtrl)) {
       val region_beg = inCtrl+i*(outWidth-outCtrl)
       val region_end = inCtrl+(i+1)*(outWidth-outCtrl)
-      when (in.bits(inCtrl,0) === (i&((1<<inCtrl)-1)).U) {
-        out.bits := Cat(in.bits(region_end,region_beg), in.bits(outCtrl,muxType))
+      when (in.bits(inCtrl-1,0) === (i&((1<<inCtrl)-1)).U) {
+        out.bits := Cat(in.bits(region_end-1,region_beg), in.bits(outCtrl-1,muxType))
       }
     }
   }
@@ -27,7 +27,7 @@ class NodeMux(muxType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: I
       val region_beg = i*(outWidth)
       val region_end = (i+1)*(outWidth)
       when (in.bits(region_beg) === 1.U) {
-        out.bits := out.bits | in.bits(region_end,region_beg)
+        out.bits := out.bits | in.bits(region_end-1,region_beg)
       }
     }
   }

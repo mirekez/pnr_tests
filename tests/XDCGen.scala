@@ -9,7 +9,7 @@ import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scala.annotation.unused
 
-class XDCGen[T <: Module](moduleFactory: () => T, project: String, @unused part: String, xrayPath: String) extends Module {
+class XDCGen[T <: Module](moduleFactory: () => T, outdir: String, project: String, @unused part: String, xrayPath: String) extends Module {
 
   val test = Module(moduleFactory())
 
@@ -18,12 +18,12 @@ class XDCGen[T <: Module](moduleFactory: () => T, project: String, @unused part:
   sourceCSV.getLines().next()
   for (line <- sourceCSV.getLines()) {
     val columns = line.split(",")
-    if (columns.length >= 4 && !columns(3).contains("GTP")) {
+    if (columns.length >= 4 && !columns(3).contains("GTP") && !columns(3).contains("MONITOR")) {
       pins += columns(0)
     }
   }
   val random = new Random()
-  val fileXDC = new File(s"$project.xdc")
+  val fileXDC = new File(s"$outdir/$project.xdc")
   fileXDC.createNewFile()
   val writerXDC = new BufferedWriter(new FileWriter(fileXDC))
   DataMirror.modulePorts(test).foreach { case (name, port) => {

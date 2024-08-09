@@ -12,18 +12,18 @@ class NodeFabric(startWidth: Int) {
   val random = new Random()
 
   var currWidth = startWidth
-  def GenModule(@unused i: Int): Module = {
+  def GenModule(@unused i: Int, m: Int, n: Int): Module = {
 
     val nodeType = random.nextInt(2)
-    println(s"Generating: $nodeType");
+//    print(s"[$nodeType] ");
 
     if (nodeType == 0) {
-      val numQueues = random.nextInt(32)+1
-      val queueDepth = random.nextInt(256)+1
+      val numQueues = random.nextInt(n)+1
+      val queueDepth = random.nextInt(m)+1
       Module(new NodeQueue(numQueues, queueDepth, currWidth))
     } else
     if (nodeType == 1) {
-      val inCtrlWidth = random.nextInt(10)+1
+      val inCtrlWidth = random.nextInt(if (currWidth<10) currWidth else 10)+1
       val outCtrlWidth = random.nextInt(inCtrlWidth)+1
       val outWidth = random.nextInt(currWidth)+outCtrlWidth
       val inWidth = currWidth

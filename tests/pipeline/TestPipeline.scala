@@ -6,6 +6,11 @@
 import chisel3._
 import chisel3.util._
 import _root_.circt.stage.ChiselStage
+import java.nio.file.{Files, Paths}
+import java.io.{BufferedWriter, FileWriter, PrintWriter, File}
+import scala.sys.process._
+import scala.io.Source
+import scala.collection.mutable.Queue
 
 import PnrTests.NodeFabric
 import PnrTests.XDCGen
@@ -23,7 +28,7 @@ class TestPipelineIO(startWidth: Int) extends Module {
   out_bits := DontCare
 }
 
-class TestPipeline(startWidth: Int) extends TestPipelineIO(startWidth) {
+class TestPipeline(startWidth: Int, l: Int, m: Int, n: Int) extends TestPipelineIO(startWidth) {
 
 //  val myReg = RegInit(0.U(8.W))
 
@@ -37,10 +42,10 @@ class TestPipeline(startWidth: Int) extends TestPipelineIO(startWidth) {
   out.ready := out_ready
   out_bits := out.bits
 
-  val stages = 9
+  val stages = l
 
   val fabric = new NodeFabric(startWidth)
-  val modules: Seq[Module] = (0 until stages).map { i => fabric.GenModule(i) }
+  val modules: Seq[Module] = (0 until stages).map { i => fabric.GenModule(i, m, n) }
   fabric.ChainModules(modules, in, out)
 
 
@@ -55,6 +60,67 @@ class TestPipeline(startWidth: Int) extends TestPipelineIO(startWidth) {
 }
 
 object Main extends App {
-  ChiselStage.emitSystemVerilog(new XDCGen(() => new TestPipelineIO(64), args(0), args(1), args(2)))
-  ChiselStage.emitSystemVerilogFile(new TestPipeline(64), firtoolOpts=Array("--lowering-options=disallowLocalVariables"))
+  val project = args(0)
+  val part = args(1)
+  val partpath = args(2)
+  val l = args(3).toInt
+  val m = args(4).toInt
+  val n = args(5).toInt
+
+  for (i <- 0 until n) {
+    val outdir = s"gen_${l}_${m}_${i}"
+    val path = Paths.get(outdir)
+    if (!Files.exists(path)) {
+      Files.createDirectories(path)
+    }
+
+    val fileMakefile = new File(s"$outdir/Makefile")
+    fileMakefile.createNewFile()
+    val writerMakefile = new BufferedWriter(new FileWriter(fileMakefile))
+
+    writerMakefile.write(s"""
+FAMILY  = artix7
+PART    = $part
+BOARD   = arty
+PROJECT = $project
+CHIPDB  = ../../../chipdb/$${ARTIX7_CHIPDB}
+TOP_VERILOG=$$(PROJECT).sv
+include ../../openXC7.mk
+""")
+    writerMakefile.close()
+
+    ChiselStage.emitSystemVerilog(new XDCGen(() => new TestPipelineIO(64), outdir, project, part, partpath))
+    ChiselStage.emitSystemVerilogFile(new TestPipeline(64, l, m, n), Array("--target-dir", outdir), firtoolOpts=Array("--lowering-options=disallowLocalVariables"))
+
+    val stdoutFile = new File(s"$outdir/stdout.log")
+    val stdoutWriter = new PrintWriter(new FileWriter(stdoutFile))
+    val stderrFile = new File(s"$outdir/stderr.log")
+    val stderrWriter = new PrintWriter(new FileWriter(stderrFile))
+
+    print(s"Running $outdir... ")
+    val process = Process("make", new java.io.File(outdir))
+    val logger = ProcessLogger(
+      line => stdoutWriter.println(line),
+      line => stderrWriter.println(line)
+    )
+    val exitCode = process ! logger
+    stdoutWriter.close()
+    stderrWriter.close()
+
+    if (exitCode != 0) {
+      val source = Source.fromFile(s"$outdir/stderr.log")
+      val queue = new Queue[String]()
+      for (line <- source.getLines()) {
+        if (queue.size >= 3) queue.dequeue()
+        queue.enqueue(line)
+      }
+      source.close()
+      val errstr = queue.toList
+      print("ERROR: ")
+      println(errstr)
+    }
+    else {
+      println(s": OK")
+    }
+  }
 }

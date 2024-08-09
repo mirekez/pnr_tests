@@ -90,7 +90,7 @@ include ../../openXC7.mk
     writerMakefile.close()
 
     ChiselStage.emitSystemVerilog(new XDCGen(() => new TestPipelineIO(64), outdir, project, part, partpath))
-    ChiselStage.emitSystemVerilogFile(new TestPipeline(64, l, m, n), Array("--target-dir", outdir), firtoolOpts=Array("--lowering-options=disallowLocalVariables"))
+    ChiselStage.emitSystemVerilogFile(new TestPipeline(64, l, m, n), Array("--target-dir", outdir), firtoolOpts=Array("--lowering-options=disallowLocalVariables,disallowPackedArrays"))
 
     val stdoutFile = new File(s"$outdir/stdout.log")
     val stdoutWriter = new PrintWriter(new FileWriter(stdoutFile))
@@ -106,6 +106,20 @@ include ../../openXC7.mk
     val exitCode = process ! logger
     stdoutWriter.close()
     stderrWriter.close()
+
+    val source = Source.fromFile(s"$outdir/stderr.log")
+    var info = ""
+    for (line <- source.getLines()) {
+      if (line.contains("SLICE_LUTX:")) {
+        val pattern = """.*(SLICE_LUTX:\s+\d+/\d+).*""".r
+        info = line match {
+          case pattern(extracted) => extracted
+          case _ => ""
+        }
+      }
+    }
+    source.close()
+    print(info)
 
     if (exitCode != 0) {
       val source = Source.fromFile(s"$outdir/stderr.log")

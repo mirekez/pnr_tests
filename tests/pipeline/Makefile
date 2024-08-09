@@ -7,10 +7,11 @@ PROJECT = TestPipeline
 SCALA_SOURCES= \
 ../../queue/NodeQueue.scala \
 ../../mux/NodeMux.scala \
+../../mux/NodeDemux.scala \
 ../NodeFabric.scala \
 ../XDCGen.scala
 
 TestPipeline:
-	scala-cli $(SCALA_SOURCES) TestPipeline.scala $< -- $(PROJECT) $(PART) $(PRJXRAY_DB_DIR)/$(FAMILY)/$(PART)/$(xc7a100tcsg324-2) 10 15 10
+	scala-cli $(SCALA_SOURCES) TestPipeline.scala $< -- $(PROJECT) $(PART) $(PRJXRAY_DB_DIR)/$(FAMILY)/$(PART)/$(xc7a100tcsg324-2) 128 512 10
 
 include ../openXC7.mk

@@ -14,8 +14,8 @@ class NodeFabric(startWidth: Int) {
   var currWidth = startWidth
   def GenModule(@unused i: Int, m: Int,@unused  n: Int): Module = {
 
-    var nodeType = random.nextInt(3)
-    val nodeSubtype = random.nextInt(3)
+    var nodeType = random.nextInt(6)
+    val nodeSubtype = random.nextInt(5)
     if (currWidth < 16) {
       nodeType = 2;
     }
@@ -42,6 +42,33 @@ class NodeFabric(startWidth: Int) {
       currWidth = outWidth
       print(s"[D${nodeSubtype}.${currWidth}] ");
       Module(new NodeDemux(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth))
+    } else
+    if (nodeType == 3) {
+      val inWidth = currWidth+1
+      val inCtrlWidth = random.nextInt(if (inWidth-1<10) inWidth-1 else 10)+1
+      val outCtrlWidth = random.nextInt(inCtrlWidth)+1
+      val outWidth = currWidth
+      currWidth = outWidth
+      print(s"[MUL${nodeSubtype}.${currWidth}] ");
+      Module(new NodeMul(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth))
+    } else
+    if (nodeType == 4) {
+      val inWidth = currWidth+1
+      val inCtrlWidth = random.nextInt(if (inWidth-1<10) inWidth-1 else 10)+1
+      val outCtrlWidth = random.nextInt(inCtrlWidth)+1
+      val outWidth = currWidth
+      currWidth = outWidth
+      print(s"[DIV${nodeSubtype}.${currWidth}] ");
+      Module(new NodeDiv(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth))
+    } else
+    if (nodeType == 5) {
+      val inWidth = currWidth+1
+      val inCtrlWidth = random.nextInt(if (inWidth-1<10) inWidth-1 else 10)+1
+      val outCtrlWidth = random.nextInt(inCtrlWidth)+1
+      val outWidth = currWidth
+      currWidth = outWidth
+      print(s"[MAP${nodeSubtype}.${currWidth}] ");
+      Module(new NodeMap(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth))
     }
     else {
       Module(new NullModule)
@@ -57,6 +84,12 @@ class NodeFabric(startWidth: Int) {
         m.in <> in
       case m: NodeDemux =>
         m.in <> in
+      case m: NodeMul =>
+        m.in <> in
+      case m: NodeDiv =>
+        m.in <> in
+      case m: NodeMap =>
+        m.in <> in
     }
 
     for (i <- 0 until modules.length-1) {
@@ -69,6 +102,12 @@ class NodeFabric(startWidth: Int) {
               n.in <> m.out
             case n: NodeDemux =>
               n.in <> m.out
+            case n: NodeMul =>
+              n.in <> m.out
+            case n: NodeDiv =>
+              n.in <> m.out
+            case n: NodeMap =>
+              n.in <> m.out
         }
         case m: NodeMux =>
           modules(i+1) match {
@@ -78,6 +117,12 @@ class NodeFabric(startWidth: Int) {
               n.in <> m.out
             case n: NodeDemux =>
               n.in <> m.out
+            case n: NodeMul =>
+              n.in <> m.out
+            case n: NodeDiv =>
+              n.in <> m.out
+            case n: NodeMap =>
+              n.in <> m.out
         }
         case m: NodeDemux =>
           modules(i+1) match {
@@ -86,6 +131,57 @@ class NodeFabric(startWidth: Int) {
             case n: NodeMux =>
               n.in <> m.out
             case n: NodeDemux =>
+              n.in <> m.out
+            case n: NodeMul =>
+              n.in <> m.out
+            case n: NodeDiv =>
+              n.in <> m.out
+            case n: NodeMap =>
+              n.in <> m.out
+        }
+        case m: NodeMul =>
+          modules(i+1) match {
+            case n: NodeQueue =>
+              n.in <> m.out
+            case n: NodeMux =>
+              n.in <> m.out
+            case n: NodeDemux =>
+              n.in <> m.out
+            case n: NodeMul =>
+              n.in <> m.out
+            case n: NodeDiv =>
+              n.in <> m.out
+            case n: NodeMap =>
+              n.in <> m.out
+        }
+        case m: NodeDiv =>
+          modules(i+1) match {
+            case n: NodeQueue =>
+              n.in <> m.out
+            case n: NodeMux =>
+              n.in <> m.out
+            case n: NodeDemux =>
+              n.in <> m.out
+            case n: NodeMul =>
+              n.in <> m.out
+            case n: NodeDiv =>
+              n.in <> m.out
+            case n: NodeMap =>
+              n.in <> m.out
+        }
+        case m: NodeMap =>
+          modules(i+1) match {
+            case n: NodeQueue =>
+              n.in <> m.out
+            case n: NodeMux =>
+              n.in <> m.out
+            case n: NodeDemux =>
+              n.in <> m.out
+            case n: NodeMul =>
+              n.in <> m.out
+            case n: NodeDiv =>
+              n.in <> m.out
+            case n: NodeMap =>
               n.in <> m.out
         }
       }
@@ -97,6 +193,12 @@ class NodeFabric(startWidth: Int) {
       case m: NodeMux =>
         out <> m.out
       case m: NodeDemux =>
+        out <> m.out
+      case m: NodeMul =>
+        out <> m.out
+      case m: NodeDiv =>
+        out <> m.out
+      case m: NodeMap =>
         out <> m.out
     }
 

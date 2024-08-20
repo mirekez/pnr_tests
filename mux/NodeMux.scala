@@ -12,7 +12,7 @@ class NodeMux(muxType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: I
   out.valid := true.B
   out.bits := Cat(in.bits >> inCtrl >> in.bits(inCtrl-1,0), in.bits(outCtrl-1,0))
 
-  if (muxType == 1 && (inWidth-inCtrl)/(outWidth-outCtrl) > 0) {
+  if (muxType%3 == 1 && (inWidth-inCtrl)/(outWidth-outCtrl) > 0) {
     for (i <- 0 until (inWidth-inCtrl)/(outWidth-outCtrl)) {
       val region_beg = inCtrl+i*(outWidth-outCtrl)
       val region_end = inCtrl+(i+1)*(outWidth-outCtrl)
@@ -22,7 +22,7 @@ class NodeMux(muxType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: I
     }
   }
 
-  if (muxType == 2 && (inWidth)/(outWidth) > 0) {
+  if (muxType%3 == 2 && (inWidth)/(outWidth) > 0) {
     out.bits := 0.U
     for (i <- 0 until (inWidth)/(outWidth)) {
       val region_beg = i*(outWidth)

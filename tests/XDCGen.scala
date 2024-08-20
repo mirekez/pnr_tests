@@ -14,12 +14,21 @@ class XDCGen[T <: Module](moduleFactory: () => T, outdir: String, project: Strin
   val test = Module(moduleFactory())
 
   val pins = ListBuffer[String]()
+  val clock_pins = ListBuffer[String]()
   val sourceCSV = Source.fromFile(s"$xrayPath/package_pins.csv")
   sourceCSV.getLines().next()
   for (line <- sourceCSV.getLines()) {
     val columns = line.split(",")
-    if (columns.length >= 4 && !columns(3).contains("GTP") && !columns(3).contains("MONITOR")) {
+    if (columns.length >= 4
+        && !columns(3).contains("GTP")
+        && !columns(3).contains("MONITOR")
+        && !columns(4).contains("SRCC")
+        && !columns(4).contains("MRCC")) {
       pins += columns(0)
+    }
+    if (columns(4).contains("SRCC")
+        || columns(4).contains("MRCC")) {
+      clock_pins += columns(0)
     }
   }
   val random = new Random()
@@ -37,10 +46,18 @@ class XDCGen[T <: Module](moduleFactory: () => T, outdir: String, project: Strin
         pins.remove(randomIndex)
       }
     } else {
-      val randomIndex = random.nextInt(pins.length)
-      writerXDC.write(s"set_property IOSTANDARD LVCMOS33 [get_ports $name]\n")
-      writerXDC.write(s"set_property PACKAGE_PIN ${pins(randomIndex)} [get_ports $name]\n")
-      pins.remove(randomIndex)
+      if (name == "clock") {
+        val randomIndex = random.nextInt(clock_pins.length)
+        writerXDC.write(s"set_property IOSTANDARD LVCMOS33 [get_ports $name]\n")
+        writerXDC.write(s"set_property PACKAGE_PIN ${clock_pins(randomIndex)} [get_ports $name]\n")
+        clock_pins.remove(randomIndex)
+        // if we know all clocks we can give rest clock_pins for generic use
+      } else {
+        val randomIndex = random.nextInt(pins.length)
+        writerXDC.write(s"set_property IOSTANDARD LVCMOS33 [get_ports $name]\n")
+        writerXDC.write(s"set_property PACKAGE_PIN ${pins(randomIndex)} [get_ports $name]\n")
+        pins.remove(randomIndex)
+      }
     }
   }}
   writerXDC.close()

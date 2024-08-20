@@ -85,10 +85,12 @@ BOARD   = arty
 PROJECT = $project
 CHIPDB  = ../../../chipdb/$${ARTIX7_CHIPDB}
 TOP_VERILOG=$$(PROJECT).sv
+#SYNTH_OPTS = -nodsp
 include ../../openXC7.mk
 """)
     writerMakefile.close()
 
+    ChiselStage.emitFIRRTLDialect(new TestPipeline(64, l, m, n))
     ChiselStage.emitSystemVerilog(new XDCGen(() => new TestPipelineIO(64), outdir, project, part, partpath))
     ChiselStage.emitSystemVerilogFile(new TestPipeline(64, l, m, n), Array("--target-dir", outdir), firtoolOpts=Array("--lowering-options=disallowLocalVariables,disallowPackedArrays"))
 
@@ -100,8 +102,8 @@ include ../../openXC7.mk
     print(s"Running $outdir... ")
     val process = Process("make", new java.io.File(outdir))
     val logger = ProcessLogger(
-      line => stdoutWriter.println(line),
-      line => stderrWriter.println(line)
+      line => {stdoutWriter.println(line); stdoutWriter.flush()},
+      line => {stderrWriter.println(line); stderrWriter.flush()}
     )
     val exitCode = process ! logger
     stdoutWriter.close()

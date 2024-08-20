@@ -12,7 +12,7 @@ class NodeDemux(muxType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth:
   out.valid := true.B
   out.bits := Cat(in.bits,in.bits)
 
-  if (muxType == 1 && (inWidth-inCtrl)/(outWidth-outCtrl) > 0) {
+  if (muxType%3 == 1 && (inWidth-inCtrl)/(outWidth-outCtrl) > 0) {
     out.bits := (in.bits >> inCtrl) << (in.bits(inCtrl-1,0) + outCtrl.U)
   }
 
@@ -21,7 +21,7 @@ class NodeDemux(muxType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth:
   val buffer = Reg(Vec(vecsize, UInt((inWidth-inCtrl).W)))
   val valid = Reg(Bool())
   valid := false.B
-  if (muxType == 2 && vecsize > 1) {  // gearbox
+  if (muxType%3 == 2 && vecsize > 1) {  // gearbox
     buffer(cntr(log2Ceil(vecsize)-1,0)) := in.bits >> inCtrl
     cntr := cntr + 1.U
     out.valid := valid

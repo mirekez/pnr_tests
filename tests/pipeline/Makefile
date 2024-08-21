@@ -18,6 +18,6 @@ SCALA_SOURCES= \
 
 TestPipeline:
 	mkdir -p ../../chipdb
-	scala-cli $(SCALA_SOURCES) TestPipeline.scala $< -- $(PROJECT) $(PART) $(PRJXRAY_DB_DIR)/$(FAMILY)/$(PART)/$(xc7a100tcsg324-2) 1 6 64 50
+	scala-cli $(SCALA_SOURCES) TestPipeline.scala $< -- $(PROJECT) $(PART) $(PRJXRAY_DB_DIR)/$(FAMILY)/$(PART)/$(xc7a100tcsg324-2) 2 16 64 50
 
 include ../openXC7.mk

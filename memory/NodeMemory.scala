@@ -16,7 +16,7 @@ class NodeMemory(memType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth
   out.bits := Cat(in.bits,in.bits)
 
   if (memType%3 == 0) {
-    val ports = complexity*4
+    val ports = 4
     val abits = (inCtrl-ports)/ports
     val depth = 2<<abits min (8<<complexity)
     val width = inWidth/depth

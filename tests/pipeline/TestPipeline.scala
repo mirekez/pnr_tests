@@ -15,6 +15,11 @@ import scala.collection.mutable.Queue
 import PnrTests.NodeFabric
 import PnrTests.XDCGen
 
+class Config {
+  val startWidth = 32
+  val minWidth = 10
+}
+
 class TestPipelineIO(startWidth: Int) extends Module {
   val in_valid = IO(Input(Bool()))
   val in_ready = IO(Output(Bool()))
@@ -28,47 +33,37 @@ class TestPipelineIO(startWidth: Int) extends Module {
   out_bits := DontCare
 }
 
-class TestPipeline(startWidth: Int, l: Int, m: Int, n: Int) extends TestPipelineIO(startWidth) {
+class TestPipeline(cfg: Config, complexity: Int, length: Int, maxWidth: Int, num: Int) extends TestPipelineIO(cfg.startWidth) {
 
-//  val myReg = RegInit(0.U(8.W))
-
-  val in = Wire(Flipped(Decoupled(UInt(startWidth.W))))
+  val in = Wire(Flipped(Decoupled(UInt(cfg.startWidth.W))))
   in.valid := in_valid
   in_ready := in.ready
   in.bits := in_bits
 
-  val out = Wire(Decoupled(UInt(startWidth.W)))
+  val out = Wire(Decoupled(UInt(cfg.startWidth.W)))
   out_valid := out.valid
   out.ready := out_ready
   out_bits := out.bits
 
-  val stages = l
+  val stages = length
 
-  val fabric = new NodeFabric(startWidth)
-  val modules: Seq[Module] = (0 until stages).map { i => fabric.GenModule(i, m, n) }
+  val fabric = new NodeFabric(cfg.startWidth)
+  val modules: Seq[Module] = (0 until stages).map { i => fabric.GenModule(maxWidth, cfg.minWidth, complexity) }
   fabric.ChainModules(modules, in, out)
 
-
-//  out := myReg
-
-//  when(a && b && c) {
-//    myReg := foo
-//  }
-//  when(d && e && f) {
-//    myReg := bar
-//  }
 }
 
 object Main extends App {
   val project = args(0)
   val part = args(1)
   val partpath = args(2)
-  val l = args(3).toInt
-  val m = args(4).toInt
-  val n = args(5).toInt
+  val k = args(3).toInt
+  val l = args(4).toInt
+  val m = args(5).toInt
+  val n = args(6).toInt
 
   for (i <- 0 until n) {
-    val outdir = s"gen_${l}_${m}_${i}"
+    val outdir = s"gen_${k}_${l}_${m}_${i}"
     val path = Paths.get(outdir)
     if (!Files.exists(path)) {
       Files.createDirectories(path)
@@ -90,9 +85,11 @@ include ../../openXC7.mk
 """)
     writerMakefile.close()
 
-    ChiselStage.emitFIRRTLDialect(new TestPipeline(64, l, m, n))
+    val cfg: Config = new Config;
+
+//    ChiselStage.emitFIRRTLDialect(new TestPipeline(k, l, m, i))
     ChiselStage.emitSystemVerilog(new XDCGen(() => new TestPipelineIO(64), outdir, project, part, partpath))
-    ChiselStage.emitSystemVerilogFile(new TestPipeline(64, l, m, n), Array("--target-dir", outdir), firtoolOpts=Array("--lowering-options=disallowLocalVariables,disallowPackedArrays"))
+    ChiselStage.emitSystemVerilogFile(new TestPipeline(cfg, k, l, m, i), Array("--target-dir", outdir), firtoolOpts=Array("--lowering-options=disallowLocalVariables,disallowPackedArrays"))
 
     val stdoutFile = new File(s"$outdir/stdout.log")
     val stdoutWriter = new PrintWriter(new FileWriter(stdoutFile))

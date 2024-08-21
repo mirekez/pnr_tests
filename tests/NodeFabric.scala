@@ -12,63 +12,75 @@ class NodeFabric(startWidth: Int) {
   val random = new Random()
 
   var currWidth = startWidth
-  def GenModule(@unused i: Int, m: Int,@unused  n: Int): Module = {
+  def GenModule(maxWidth: Int, minWidth: Int, complexity: Int): Module = {
 
-    var nodeType = random.nextInt(6)
-    val nodeSubtype = random.nextInt(5)
+    var nodeType = random.nextInt(7)
+    val nodeSubtype = random.nextInt(6)
     if (currWidth < 16) {
       nodeType = 2;
     }
     if (nodeType == 0) {
-      val numQueues = nodeSubtype+1
-      val queueDepth = random.nextInt(m/currWidth+1)+1
+      val inWidth = currWidth
+      val inCtrlWidth = minWidth max random.nextInt(inWidth/2)
+      val outWidth = currWidth
+      val outCtrlWidth = inCtrlWidth
+      currWidth = outWidth
       print(s"[Q${nodeSubtype}.${currWidth}] ");
-      Module(new NodeQueue(numQueues, queueDepth, currWidth))
+      Module(new NodeQueue(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth, complexity))
     } else
     if (nodeType == 1) {
-      val inWidth = currWidth+1
-      val inCtrlWidth = random.nextInt(if (inWidth-1<10) inWidth-1 else 10)+1
-      val outCtrlWidth = random.nextInt(inCtrlWidth)+1
-      val outWidth = random.nextInt(currWidth/2)+1+outCtrlWidth
+      val inWidth = currWidth
+      val inCtrlWidth = minWidth max random.nextInt(inWidth/2)
+      val outWidth = minWidth*2 max random.nextInt(currWidth/2)
+      val outCtrlWidth = minWidth max (outWidth/2 min random.nextInt(inCtrlWidth*2))
       currWidth = outWidth
-      print(s"[M${nodeSubtype}.${currWidth}] ");
-      Module(new NodeMux(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth))
+      print(s"[M${nodeSubtype}.${currWidth}-${outCtrlWidth}] ");
+      Module(new NodeMux(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth, complexity))
     } else
     if (nodeType == 2) {
-      val inWidth = currWidth+1
-      val inCtrlWidth = random.nextInt(if (inWidth-1<10) inWidth-1 else 10)+1
-      val outCtrlWidth = random.nextInt(inCtrlWidth)+1
-      val outWidth = random.nextInt(if (currWidth*4>m) m else currWidth*4)+1+outCtrlWidth
+      val inWidth = currWidth
+      val inCtrlWidth = minWidth max random.nextInt(inWidth/2)
+      val outWidth = minWidth*2 max (maxWidth min random.nextInt(currWidth*4))
+      val outCtrlWidth = minWidth max (outWidth/2 min random.nextInt(inCtrlWidth*2))
       currWidth = outWidth
-      print(s"[D${nodeSubtype}.${currWidth}] ");
-      Module(new NodeDemux(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth))
+      print(s"[D${nodeSubtype}.${currWidth}-${outCtrlWidth}] ");
+      Module(new NodeDemux(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth, complexity))
     } else
     if (nodeType == 3) {
-      val inWidth = currWidth+1
-      val inCtrlWidth = random.nextInt(if (inWidth-1<10) inWidth-1 else 10)+1
-      val outCtrlWidth = random.nextInt(inCtrlWidth)+1
+      val inWidth = currWidth
+      val inCtrlWidth = minWidth max random.nextInt(inWidth/2)
       val outWidth = currWidth
+      val outCtrlWidth = minWidth max (outWidth/2 min random.nextInt(inCtrlWidth*2))
       currWidth = outWidth
-      print(s"[MUL${nodeSubtype}.${currWidth}] ");
-      Module(new NodeMul(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth))
+      print(s"[MUL${nodeSubtype}.${currWidth}-${outCtrlWidth}] ");
+      Module(new NodeMul(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth, complexity))
     } else
     if (nodeType == 4) {
-      val inWidth = currWidth+1
-      val inCtrlWidth = random.nextInt(if (inWidth-1<10) inWidth-1 else 10)+1
-      val outCtrlWidth = random.nextInt(inCtrlWidth)+1
+      val inWidth = currWidth
+      val inCtrlWidth = minWidth max random.nextInt(inWidth/2)
       val outWidth = currWidth
+      val outCtrlWidth = minWidth max (outWidth/2 min random.nextInt(inCtrlWidth*2))
       currWidth = outWidth
-      print(s"[DIV${nodeSubtype}.${currWidth}] ");
-      Module(new NodeDiv(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth))
+      print(s"[DIV${nodeSubtype}.${currWidth}-${outCtrlWidth}] ");
+      Module(new NodeDiv(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth, complexity))
     } else
     if (nodeType == 5) {
-      val inWidth = currWidth+1
-      val inCtrlWidth = random.nextInt(if (inWidth-1<10) inWidth-1 else 10)+1
-      val outCtrlWidth = random.nextInt(inCtrlWidth)+1
+      val inWidth = currWidth
+      val inCtrlWidth = minWidth max random.nextInt(inWidth/2)
       val outWidth = currWidth
+      val outCtrlWidth = minWidth max (outWidth/2 min random.nextInt(inCtrlWidth*2))
       currWidth = outWidth
-      print(s"[MAP${nodeSubtype}.${currWidth}] ");
-      Module(new NodeMap(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth))
+      print(s"[MAP${nodeSubtype}.${currWidth}-${outCtrlWidth}] ");
+      Module(new NodeMap(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth, complexity))
+    } else
+    if (nodeType == 6) {
+      val inWidth = currWidth
+      val inCtrlWidth = minWidth max random.nextInt(inWidth/2)
+      val outWidth = currWidth
+      val outCtrlWidth = minWidth max (outWidth/2 min random.nextInt(inCtrlWidth*2))
+      currWidth = outWidth
+      print(s"[MEM${nodeSubtype}.${currWidth}-${outCtrlWidth}] ");
+      Module(new NodeMemory(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth, complexity))
     }
     else {
       Module(new NullModule)
@@ -90,6 +102,8 @@ class NodeFabric(startWidth: Int) {
         m.in <> in
       case m: NodeMap =>
         m.in <> in
+      case m: NodeMemory =>
+        m.in <> in
     }
 
     for (i <- 0 until modules.length-1) {
@@ -108,6 +122,8 @@ class NodeFabric(startWidth: Int) {
               n.in <> m.out
             case n: NodeMap =>
               n.in <> m.out
+            case n: NodeMemory =>
+              n.in <> m.out
         }
         case m: NodeMux =>
           modules(i+1) match {
@@ -122,6 +138,8 @@ class NodeFabric(startWidth: Int) {
             case n: NodeDiv =>
               n.in <> m.out
             case n: NodeMap =>
+              n.in <> m.out
+            case n: NodeMemory =>
               n.in <> m.out
         }
         case m: NodeDemux =>
@@ -138,6 +156,8 @@ class NodeFabric(startWidth: Int) {
               n.in <> m.out
             case n: NodeMap =>
               n.in <> m.out
+            case n: NodeMemory =>
+              n.in <> m.out
         }
         case m: NodeMul =>
           modules(i+1) match {
@@ -152,6 +172,8 @@ class NodeFabric(startWidth: Int) {
             case n: NodeDiv =>
               n.in <> m.out
             case n: NodeMap =>
+              n.in <> m.out
+            case n: NodeMemory =>
               n.in <> m.out
         }
         case m: NodeDiv =>
@@ -168,6 +190,8 @@ class NodeFabric(startWidth: Int) {
               n.in <> m.out
             case n: NodeMap =>
               n.in <> m.out
+            case n: NodeMemory =>
+              n.in <> m.out
         }
         case m: NodeMap =>
           modules(i+1) match {
@@ -182,6 +206,25 @@ class NodeFabric(startWidth: Int) {
             case n: NodeDiv =>
               n.in <> m.out
             case n: NodeMap =>
+              n.in <> m.out
+            case n: NodeMemory =>
+              n.in <> m.out
+        }
+        case m: NodeMemory =>
+          modules(i+1) match {
+            case n: NodeQueue =>
+              n.in <> m.out
+            case n: NodeMux =>
+              n.in <> m.out
+            case n: NodeDemux =>
+              n.in <> m.out
+            case n: NodeMul =>
+              n.in <> m.out
+            case n: NodeDiv =>
+              n.in <> m.out
+            case n: NodeMap =>
+              n.in <> m.out
+            case n: NodeMemory =>
               n.in <> m.out
         }
       }
@@ -199,6 +242,8 @@ class NodeFabric(startWidth: Int) {
       case m: NodeDiv =>
         out <> m.out
       case m: NodeMap =>
+        out <> m.out
+      case m: NodeMemory =>
         out <> m.out
     }
 

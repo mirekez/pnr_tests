@@ -1,5 +1,6 @@
 package firrtl
 
+//this is a hack to make verilog wire/reg attributes like (* use_dsp = "no" *), was broken in last version of Chisel
 
 sealed trait DescriptionAnnotation extends firrtl.annotations.Annotation {
   def target:      firrtl.annotations.Target

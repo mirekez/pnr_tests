@@ -3,7 +3,7 @@ package PnrTests
 import chisel3._
 import chisel3.util._
 
-class NodeMux(muxType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: Int) extends Module {
+class NodeMux(muxType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: Int, complexity: Int) extends Module {
 
   val in = IO(Flipped(Decoupled(UInt(inWidth.W))))
   val out = IO(Decoupled(UInt(outWidth.W)))

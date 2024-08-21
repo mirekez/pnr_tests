@@ -18,7 +18,7 @@ case class DontTouchAnnotation(target: firrtl.annotations.ReferenceTarget) exten
 }*/
 
 
-class NodeDiv(divType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: Int) extends Module {
+class NodeDiv(divType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: Int, complexity: Int) extends Module {
 
   val in = IO(Flipped(Decoupled(UInt(inWidth.W))))
   val out = IO(Decoupled(UInt(outWidth.W)))
@@ -26,7 +26,8 @@ class NodeDiv(divType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: I
   val in_reg = Reg(UInt(inWidth.W))
   val out_reg = Reg(UInt(outWidth.W))
 
-  if (divType > 3) {
+  var complexity1 = complexity
+  if (divType%2 == 0 && divType >= 2) {
     annotate(new ChiselAnnotation {
         def toFirrtl = firrtl.AttributeAnnotation(in_reg.toTarget, "use_dsp = \"no\"")
       })
@@ -34,22 +35,35 @@ class NodeDiv(divType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: I
         def toFirrtl = firrtl.AttributeAnnotation(out_reg.toTarget, "use_dsp = \"no\"")
       })
   }
+  else {
+    complexity1 += 5
+  }
 
   out.bits := out_reg  // using regs to avoid long math chains
   in_reg := in.bits
 
   in.ready := true.B
   out.valid := true.B
-  out_reg := Cat((in_reg>>inCtrl)/(in_reg(inCtrl/2-1,0)), in_reg(outCtrl-1,0))
+  out_reg := Cat((in_reg>>inCtrl)/(in_reg(complexity,0)), in_reg(outCtrl-1,0))  // types 0 and 1
 
-  if (divType > 1) {
+  if (divType >= 2) {
     val data = (
-    for (i <- 0 until divType) yield {
-      val region_beg = inCtrl+i*(inWidth-inCtrl)/divType
-      val region_end = inCtrl+(i+1)*(inWidth-inCtrl)/divType
-      in_reg(region_end-1,region_beg)/in_reg(inCtrl/2-1,0)
+    for (i <- 0 until 4) yield {
+      val region_beg = inCtrl+i*(inWidth-inCtrl)/4
+      val region_end = inCtrl+(i+1)*(inWidth-inCtrl)/4
+      in_reg(region_end-1,region_beg)/in_reg(2+complexity,0)
     }).toVector
-    out_reg := Cat(data).asUInt
+    out_reg := Cat(Cat(data).asUInt,in.bits(outCtrl-1,0))
+  }
+
+  if (divType >= 4) {
+    val width = 4<<complexity1
+    val data = (
+    for (i <- 0 until 1+(inWidth-inCtrl)/width) yield {
+      val size = width min (inWidth-inCtrl)
+      in_reg(size/2-1,0)/in_reg(size-1,size/2)
+    }).toVector
+    out_reg := Cat(Cat(data).asUInt,in.bits(outCtrl-1,0))
   }
 
   out.bits := out_reg  // using regs to avoid long math chains

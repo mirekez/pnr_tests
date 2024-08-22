@@ -26,8 +26,9 @@ class XDCGen[T <: Module](moduleFactory: () => T, outdir: String, project: Strin
         && !columns(4).contains("MRCC")) {
       pins += columns(0)
     }
-    if (columns(4).contains("SRCC")
-        || columns(4).contains("MRCC")) {
+    if ((columns(4).contains("SRCC")
+        || columns(4).contains("MRCC"))
+        && !columns(4).contains("N_T")) {
       clock_pins += columns(0)
     }
   }
@@ -38,7 +39,7 @@ class XDCGen[T <: Module](moduleFactory: () => T, outdir: String, project: Strin
   DataMirror.modulePorts(test).foreach { case (name, port) => {
     port := DontCare
     if (port.getWidth > 1) {
-      for (i <- 0 to port.getWidth) {
+      for (i <- 0 until port.getWidth) {
         assert(pins.length > 0, "no so many pins in device")
         val randomIndex = random.nextInt(pins.length)
         writerXDC.write(s"set_property IOSTANDARD LVCMOS33 [get_ports $name[$i]]\n")

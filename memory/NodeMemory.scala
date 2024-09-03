@@ -18,13 +18,13 @@ class NodeMemory(memType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth
   if (memType%3 == 0) {
     val ports = 4
     val abits = (inCtrl-ports)/ports
-    val depth = 2<<abits min (8<<complexity)
-    val width = inWidth/depth
-    val mem = SyncReadMem(depth, UInt((width/ports).W))
+    val depth = 2<<abits max (8<<complexity)
+    val width = (inWidth-inCtrl)/ports
+    val mem = SyncReadMem(depth, UInt(width.W))
     val data = (
       for (i <- 0 until ports) yield {
-        val data_beg = inCtrl+(i+0)*(inWidth-inCtrl)/ports
-        val data_end = inCtrl+(i+1)*(inWidth-inCtrl)/ports
+        val data_beg = inCtrl+(i+0)*width
+        val data_end = inCtrl+(i+1)*width
         when (in.valid && in.bits(i)) {
           mem.write(in.bits(ports+abits*(i+1)-1,ports+abits*i), in.bits(data_end-1,data_beg))
         }

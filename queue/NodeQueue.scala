@@ -6,9 +6,9 @@ import chisel3.util._
 class NodeQueue(memType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: Int, complexity: Int) extends Module {
 
   val in = IO(Flipped(Decoupled(UInt(inWidth.W))))
-  val out = IO(Decoupled(UInt(outCtrl.W)))
+  val out = IO(Decoupled(UInt(outWidth.W)))
 
-  val numQueues = 2
+  val numQueues = memType+1
   val queues = Array.fill(numQueues)(Module(new Queue(UInt(inWidth.W), 2<<complexity)))
 
   queues(0).io.enq <> in
@@ -17,6 +17,4 @@ class NodeQueue(memType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth:
     queues(i+1).io.enq <> queues(i).io.deq
   }
   out <> queues(numQueues-1).io.deq
-  out.valid := queues(numQueues-1).io.deq.valid || in.bits(1)
-
 }

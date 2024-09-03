@@ -20,7 +20,7 @@ class Config {
   val minWidth = 10
 }
 
-class TestPipelineIO(startWidth: Int) extends Module {
+class TestMeshIO(startWidth: Int) extends Module {
   val in_valid = IO(Input(Bool()))
   val in_ready = IO(Output(Bool()))
   val in_bits = IO(Input(UInt(startWidth.W)))
@@ -33,7 +33,7 @@ class TestPipelineIO(startWidth: Int) extends Module {
   out_bits := DontCare
 }
 
-class TestPipeline(cfg: Config, complexity: Int, length: Int, maxWidth: Int, num: Int) extends TestPipelineIO(cfg.startWidth) {
+class TestMesh(cfg: Config, complexity: Int, x: Int, y: Int, maxWidth: Int, num: Int) extends TestMeshIO(cfg.startWidth) {
 
   val in = Wire(Flipped(Decoupled(UInt(cfg.startWidth.W))))
   in.valid := in_valid
@@ -45,12 +45,17 @@ class TestPipeline(cfg: Config, complexity: Int, length: Int, maxWidth: Int, num
   out.ready := out_ready
   out_bits := out.bits
 
-  val stages = length
-
   val fabric = new NodeFabric(cfg.startWidth)
-  val modules: Seq[Module] = (0 until stages).map { i => fabric.GenModule(maxWidth, cfg.minWidth, complexity) }
-  fabric.ChainModules(modules, in, out, maxWidth)
-
+  val links = Seq.fill(y+1) {
+    Wire(Vec(x, DecoupledIO(UInt(maxWidth.W))))
+  }
+  for (i <- 0 until y) {
+    val modules: Seq[Module] = (0 until x*2).map { i => if (i%2==0) fabric.GenModule(maxWidth, cfg.minWidth, complexity) else fabric.GenCrossbar(maxWidth, cfg.minWidth, complexity) }
+    fabric.ChainModules(modules, in, out, maxWidth)
+    fabric.MeshModules(modules, links(i), links(i+1), maxWidth)
+  }
+  links(0) := DontCare
+  links(y) := DontCare
 }
 
 object Main extends App {
@@ -58,12 +63,13 @@ object Main extends App {
   val part = args(1)
   val partpath = args(2)
   val k = args(3).toInt
-  val l = args(4).toInt
-  val m = args(5).toInt
-  val n = args(6).toInt
+  val x = args(4).toInt
+  val y = args(5).toInt
+  val m = args(6).toInt
+  val n = args(7).toInt
 
   for (i <- 0 until n) {
-    val outdir = s"gen_${k}_${l}_${m}_${i}"
+    val outdir = s"gen_${k}_${x}_${y}_${m}_${i}"
     val path = Paths.get(outdir)
     if (!Files.exists(path)) {
       Files.createDirectories(path)
@@ -87,9 +93,9 @@ include ../../openXC7.mk
 
     val cfg: Config = new Config;
 
-//    ChiselStage.emitFIRRTLDialect(new TestPipeline(k, l, m, i))
-    ChiselStage.emitSystemVerilog(new XDCGen(() => new TestPipelineIO(64), outdir, project, part, partpath))
-    ChiselStage.emitSystemVerilogFile(new TestPipeline(cfg, k, l, m, i), Array("--target-dir", outdir), firtoolOpts=Array("--lowering-options=disallowLocalVariables,disallowPackedArrays"))
+//    ChiselStage.emitFIRRTLDialect(new TestMesh(k, l, m, i))
+    ChiselStage.emitSystemVerilog(new XDCGen(() => new TestMeshIO(64), outdir, project, part, partpath))
+    ChiselStage.emitSystemVerilogFile(new TestMesh(cfg, k, x, y, m, i), Array("--target-dir", outdir), firtoolOpts=Array("--lowering-options=disallowLocalVariables,disallowPackedArrays"))
 
     val stdoutFile = new File(s"$outdir/stdout.log")
     val stdoutWriter = new PrintWriter(new FileWriter(stdoutFile))

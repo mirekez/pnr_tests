@@ -31,7 +31,7 @@ class NodeFabric(startWidth: Int) {
     if (nodeType == 1) {
       val inWidth = currWidth
       val inCtrlWidth = minWidth max random.nextInt(inWidth/2)
-      val outWidth = minWidth*2 max random.nextInt(currWidth/2)
+      val outWidth = minWidth*2 max random.nextInt(currWidth)
       val outCtrlWidth = minWidth max (outWidth/2 min random.nextInt(inCtrlWidth*2))
       currWidth = outWidth
       print(s"[M${nodeSubtype}.${currWidth}-${outCtrlWidth}] ");
@@ -40,7 +40,7 @@ class NodeFabric(startWidth: Int) {
     if (nodeType == 2) {
       val inWidth = currWidth
       val inCtrlWidth = minWidth max random.nextInt(inWidth/2)
-      val outWidth = minWidth*2 max (maxWidth min random.nextInt(currWidth*4))
+      val outWidth = minWidth*2 max (maxWidth min random.nextInt(currWidth*8))
       val outCtrlWidth = minWidth max (outWidth/2 min random.nextInt(inCtrlWidth*2))
       currWidth = outWidth
       print(s"[D${nodeSubtype}.${currWidth}-${outCtrlWidth}] ");
@@ -80,174 +80,93 @@ class NodeFabric(startWidth: Int) {
       val outCtrlWidth = minWidth max (outWidth/2 min random.nextInt(inCtrlWidth*2))
       currWidth = outWidth
       print(s"[MEM${nodeSubtype}.${currWidth}-${outCtrlWidth}] ");
-      Module(new NodeMemory(nodeSubtype, inCtrlWidth, inWidth, outCtrlWidth, outWidth, complexity))
+      Module(new NodeMemory(0/*nodeSubtype*/, inCtrlWidth, inWidth, outCtrlWidth, outWidth, complexity))
     }
     else {
       Module(new NullModule)
     }
   }
 
-  def ChainModules(modules: Seq[Module], in: DecoupledIO[UInt], out: DecoupledIO[UInt]): Unit = {
+  def ChainModule(mod: Module, in: DecoupledIO[UInt], out: DecoupledIO[UInt]) {
 
-    modules(0) match {
+    mod match {
       case m: NodeQueue =>
-        m.in <> in
+        in <> m.in
+        m.out <> out
       case m: NodeMux =>
-        m.in <> in
+        in <> m.in
+        m.out <> out
       case m: NodeDemux =>
-        m.in <> in
+        in <> m.in
+        m.out <> out
       case m: NodeMul =>
-        m.in <> in
+        in <> m.in
+        m.out <> out
       case m: NodeDiv =>
-        m.in <> in
+        in <> m.in
+        m.out <> out
       case m: NodeMap =>
-        m.in <> in
+        in <> m.in
+        m.out <> out
       case m: NodeMemory =>
-        m.in <> in
+        in <> m.in
+        m.out <> out
+      case m: Crossbar =>
+        in <> m.in
+        m.out <> out
     }
+  }
+
+  def GenCrossbar(maxWidth: Int, minWidth: Int, complexity: Int): Module = {
+    print(s"[C] ");
+    Module(new Crossbar(maxWidth, minWidth))
+  }
+
+  def ChainModules(modules: Seq[Module], in: DecoupledIO[UInt], out: DecoupledIO[UInt], maxWidth: Int): Unit = {
+
+    var ins = Wire(Vec(modules.length, DecoupledIO(UInt(maxWidth.W))))
+    var outs = Wire(Vec(modules.length-1, DecoupledIO(UInt(maxWidth.W))))
+
+    ChainModule(modules(0), in, ins(0))
 
     for (i <- 0 until modules.length-1) {
-      modules(i) match {
-        case m: NodeQueue =>
-          modules(i+1) match {
-            case n: NodeQueue =>
-              n.in <> m.out
-            case n: NodeMux =>
-              n.in <> m.out
-            case n: NodeDemux =>
-              n.in <> m.out
-            case n: NodeMul =>
-              n.in <> m.out
-            case n: NodeDiv =>
-              n.in <> m.out
-            case n: NodeMap =>
-              n.in <> m.out
-            case n: NodeMemory =>
-              n.in <> m.out
-        }
-        case m: NodeMux =>
-          modules(i+1) match {
-            case n: NodeQueue =>
-              n.in <> m.out
-            case n: NodeMux =>
-              n.in <> m.out
-            case n: NodeDemux =>
-              n.in <> m.out
-            case n: NodeMul =>
-              n.in <> m.out
-            case n: NodeDiv =>
-              n.in <> m.out
-            case n: NodeMap =>
-              n.in <> m.out
-            case n: NodeMemory =>
-              n.in <> m.out
-        }
-        case m: NodeDemux =>
-          modules(i+1) match {
-            case n: NodeQueue =>
-              n.in <> m.out
-            case n: NodeMux =>
-              n.in <> m.out
-            case n: NodeDemux =>
-              n.in <> m.out
-            case n: NodeMul =>
-              n.in <> m.out
-            case n: NodeDiv =>
-              n.in <> m.out
-            case n: NodeMap =>
-              n.in <> m.out
-            case n: NodeMemory =>
-              n.in <> m.out
-        }
-        case m: NodeMul =>
-          modules(i+1) match {
-            case n: NodeQueue =>
-              n.in <> m.out
-            case n: NodeMux =>
-              n.in <> m.out
-            case n: NodeDemux =>
-              n.in <> m.out
-            case n: NodeMul =>
-              n.in <> m.out
-            case n: NodeDiv =>
-              n.in <> m.out
-            case n: NodeMap =>
-              n.in <> m.out
-            case n: NodeMemory =>
-              n.in <> m.out
-        }
-        case m: NodeDiv =>
-          modules(i+1) match {
-            case n: NodeQueue =>
-              n.in <> m.out
-            case n: NodeMux =>
-              n.in <> m.out
-            case n: NodeDemux =>
-              n.in <> m.out
-            case n: NodeMul =>
-              n.in <> m.out
-            case n: NodeDiv =>
-              n.in <> m.out
-            case n: NodeMap =>
-              n.in <> m.out
-            case n: NodeMemory =>
-              n.in <> m.out
-        }
-        case m: NodeMap =>
-          modules(i+1) match {
-            case n: NodeQueue =>
-              n.in <> m.out
-            case n: NodeMux =>
-              n.in <> m.out
-            case n: NodeDemux =>
-              n.in <> m.out
-            case n: NodeMul =>
-              n.in <> m.out
-            case n: NodeDiv =>
-              n.in <> m.out
-            case n: NodeMap =>
-              n.in <> m.out
-            case n: NodeMemory =>
-              n.in <> m.out
-        }
-        case m: NodeMemory =>
-          modules(i+1) match {
-            case n: NodeQueue =>
-              n.in <> m.out
-            case n: NodeMux =>
-              n.in <> m.out
-            case n: NodeDemux =>
-              n.in <> m.out
-            case n: NodeMul =>
-              n.in <> m.out
-            case n: NodeDiv =>
-              n.in <> m.out
-            case n: NodeMap =>
-              n.in <> m.out
-            case n: NodeMemory =>
-              n.in <> m.out
+      ChainModule(modules(i+1), ins(i), outs(i))
+      ins(i+1) <> outs(i)
+    }
+    out <> ins(modules.length-1)
+  }
+
+  def StarModules(modules: Seq[Module], in: DecoupledIO[UInt], out: DecoupledIO[UInt], maxWidth: Int): Unit = {
+
+    var ins = Wire(Vec(modules.length, DecoupledIO(UInt(maxWidth.W))))
+    var outs = Wire(Vec(modules.length-1, DecoupledIO(UInt(maxWidth.W))))
+
+    ChainModule(modules(0), in, ins(0))
+
+    val regs_ctrl = Reg(UInt(10.W))
+    regs_ctrl := ins(modules.length/2).bits(9,0)
+    for (i <- 0 until modules.length-1) {
+      val star_in = Wire(DecoupledIO(UInt(maxWidth.W)))
+      star_in.valid := ins(i).valid
+      star_in.bits := Cat(ins(i).bits(maxWidth-1,10),regs_ctrl^ins(i).bits(9,0))
+      ins(i).ready := star_in.ready
+      ChainModule(modules(i+1), star_in, outs(i))
+      ins(i+1) <> outs(i)
+    }
+    out <> ins(modules.length-1)
+  }
+
+  def MeshModules(modules: Seq[Module], in: Vec[DecoupledIO[UInt]], out: Vec[DecoupledIO[UInt]], maxWidth: Int): Unit = {
+
+    for (i <- 0 until modules.length) {
+      if (i%2 == 1) {
+        modules(i) match {
+          case m: Crossbar =>
+            m.in1 <> in(i/2)
+            out(i/2) <> m.out1
         }
       }
     }
-
-    modules(modules.length-1) match {
-      case m: NodeQueue =>
-        out <> m.out
-      case m: NodeMux =>
-        out <> m.out
-      case m: NodeDemux =>
-        out <> m.out
-      case m: NodeMul =>
-        out <> m.out
-      case m: NodeDiv =>
-        out <> m.out
-      case m: NodeMap =>
-        out <> m.out
-      case m: NodeMemory =>
-        out <> m.out
-    }
-
   }
 
 }
-

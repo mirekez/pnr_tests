@@ -32,24 +32,24 @@ class NodeMul(mulType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: I
 
   in.ready := true.B
   out.valid := true.B
-  out_reg := Cat((in_reg>>inCtrl)*(in_reg(1+complexity,0)), in_reg(outCtrl-1,0))  // types 0 and 1
+  out_reg := Cat((in_reg>>inCtrl)*(in_reg((complexity-3) max 1,0)), in_reg(outCtrl-1,0))  // types 0 and 1
 
   if (mulType >= 2) {
     val data = (
     for (i <- 0 until 4) yield {
       val region_beg = inCtrl+i*(inWidth-inCtrl)/4
       val region_end = inCtrl+(i+1)*(inWidth-inCtrl)/4
-      in_reg(region_end-1,region_beg)*in_reg(2+complexity,0)
+      in_reg(region_end-1,region_beg)*in_reg(complexity,0)
     }).toVector
     out_reg := Cat(Cat(data).asUInt,in.bits(outCtrl-1,0))
   }
 
   if (mulType >= 4) {
-    val width = 4<<complexity1
+    val width = 2<<complexity1
     val data = (
     for (i <- 0 until 1+(inWidth-inCtrl)/width) yield {
       val size = width min (inWidth-inCtrl)
-      in_reg(size-1,0)*in_reg(size-1,0)
+      (in_reg>>(inCtrl+i*size))*(in_reg>>(inCtrl+i*size))
     }).toVector
     out_reg := Cat(Cat(data).asUInt,in.bits(outCtrl-1,0))
   }

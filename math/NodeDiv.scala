@@ -27,16 +27,18 @@ class NodeDiv(divType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: I
   val out_reg = Reg(UInt(outWidth.W))
 
   var complexity1 = complexity
-  if (divType%2 == 0 && divType >= 2) {
-    annotate(new ChiselAnnotation {
-        def toFirrtl = firrtl.AttributeAnnotation(in_reg.toTarget, "use_dsp = \"no\"")
-      })
-    annotate(new ChiselAnnotation {
-        def toFirrtl = firrtl.AttributeAnnotation(out_reg.toTarget, "use_dsp = \"no\"")
-      })
-  }
-  else {
-    complexity1 += 5
+  if (divType >= 2) {
+    if (divType%2 == 0) {
+      annotate(new ChiselAnnotation {
+          def toFirrtl = firrtl.AttributeAnnotation(in_reg.toTarget, "use_dsp = \"no\"")
+        })
+      annotate(new ChiselAnnotation {
+          def toFirrtl = firrtl.AttributeAnnotation(out_reg.toTarget, "use_dsp = \"no\"")
+        })
+    }
+    else {
+      complexity1 += 3
+    }
   }
 
   out.bits := out_reg  // using regs to avoid long math chains
@@ -44,24 +46,24 @@ class NodeDiv(divType: Int, inCtrl: Int, inWidth: Int, outCtrl: Int, outWidth: I
 
   in.ready := true.B
   out.valid := true.B
-  out_reg := Cat((in_reg>>inCtrl)/(in_reg(complexity,0)), in_reg(outCtrl-1,0))  // types 0 and 1
+  out_reg := Cat((in_reg>>inCtrl)/(in_reg((complexity-5) max 0,0)), in_reg(outCtrl-1,0))  // types 0 and 1
 
   if (divType >= 2) {
     val data = (
     for (i <- 0 until 4) yield {
       val region_beg = inCtrl+i*(inWidth-inCtrl)/4
       val region_end = inCtrl+(i+1)*(inWidth-inCtrl)/4
-      in_reg(region_end-1,region_beg)/in_reg(2+complexity,0)
+      in_reg(region_end-1,region_beg)/in_reg(complexity,0)
     }).toVector
     out_reg := Cat(Cat(data).asUInt,in.bits(outCtrl-1,0))
   }
 
   if (divType >= 4) {
-    val width = 4<<complexity1
+    val width = 1<<complexity1
     val data = (
     for (i <- 0 until 1+(inWidth-inCtrl)/width) yield {
       val size = width min (inWidth-inCtrl)
-      in_reg(size/2-1,0)/in_reg(size-1,size/2)
+      (in_reg>>(inCtrl+i*size))/in_reg(complexity,0)
     }).toVector
     out_reg := Cat(Cat(data).asUInt,in.bits(outCtrl-1,0))
   }

@@ -5,4 +5,4 @@ Random RTL code generator designed in test purposes for Synthesis and Place and 
 Currently tested only under Ubuntu 22.04
 
 # license
-This software is distributed under GPLv3, except libraries in folder libs/ which have it's own Open-source licenses.
+This software is distributed under GPLv3.

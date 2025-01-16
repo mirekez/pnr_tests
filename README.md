@@ -1,5 +1,5 @@
 # pnr_tests
-Random Verilog/RTL code generator designed in test purposes for Synthesis and Place and Routing tools
+Random Verilog/RTL code generator designed for testing purposes for Synthesis and Place and Routing tools
 
 Uses scala-cli
 

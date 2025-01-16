@@ -18,7 +18,7 @@ SCALA_SOURCES= \
 ../XDCGen.scala
 
 TestMesh:
-	mkdir -p ../../chipdb
+	mkdir -p ../../chipdb &> /dev/null
 	scala-cli $(SCALA_SOURCES) TestMesh.scala $< -- $(PROJECT) $(PART) $(PRJXRAY_DB_DIR)/$(FAMILY)/$(PART)/$(xc7a100tcsg324-2) 3 4 4 64 500
 
 include ../openXC7.mk

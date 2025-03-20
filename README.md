@@ -11,7 +11,7 @@ Currently tested only under Ubuntu 22.04
 # license
 This software is distributed under GPLv3.
 
-
+# architecture
 There are 3 different topologies made in pnr_tests and more topologies can be added.
 Each topology is build from Nodes, each Node is logic combinational function (no registers inside it yet).
 One array of data is collected from random inputs, passes all pipeline, and goes to random output pins.

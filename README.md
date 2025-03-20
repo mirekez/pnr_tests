@@ -25,7 +25,7 @@ Small random number of data bits considered as control and connected to logic fu
 
 The simplest topology is PIPELINE - it is a linear sequence of Nodes (currently registers between Nodes appear randomly so the generator gives a lot of very long chains, there is a small patch to force adding registers between Nodes which makes chains shorter).
 
-The next topology is MESH - is it X*Y 2-D array of Nodes. Signal arrives to all rows simultaneously. Each 2 neighbor rows swap random part of their data between each Node. This makes a lot of diagonal data paths between them (including control).
+The next topology is MESH - it is X*Y 2-D array of Nodes. Signal arrives to all rows simultaneously. Each 2 neighbor rows swap random part of their data between each Node. This makes a lot of diagonal data paths between them (including control).
 
 The last topology is STAR. It is very similar to PIPELINE but control from first Node goes to all other Nodes. This makes randomly high fanout number involved in processing data. It is a good idea to combine different topologies in one design which in not difficult to implement.
 

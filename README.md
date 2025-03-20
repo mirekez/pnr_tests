@@ -1,7 +1,7 @@
 # pnr_tests
 Random Verilog/RTL code generator designed for testing purposes for Synthesis and Place and Routing tools
 
-Uses scala-cli
+Uses scala-cli for Chisel HDL
 
 Took from here: https://scala-cli.virtuslab.org/install/
 

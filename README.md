@@ -5,6 +5,9 @@ Uses scala-cli
 
 Took from here: https://scala-cli.virtuslab.org/install/
 
+Also requires PIN-description file.
+Uses nextpnr (https://github.com/openXC7/nextpnr-xilinx) to compile design.
+
 # development
 Currently tested only under Ubuntu 22.04
 

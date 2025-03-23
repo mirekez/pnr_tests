@@ -19,7 +19,7 @@ There are 3 different topologies made in pnr_tests and more topologies can be ad
 
 Each topology is build from Nodes, each Node is logic combinational function (no registers inside it yet).
 
-One array of data is collected from random inputs, passes all pipeline, and goes to random output pins.
+One array of data is collected from random inputs, passes all pipeline, and goes to random output pins. Each step has own random data size giving work to MUX/DEMUX Nodes.
 
 Small random number of data bits considered as control and connected to logic function control pins and to pins which control the flow.
 
